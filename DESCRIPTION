@@ -1,3 +1,5 @@
 Package: compendium
 Version: 0.1.0
-Depends: tidyverse, fable, neonstore, ISOweek
+Depends: tidyverse, fable, neonstore, neon4cast
+Remotes: github::eco4cast/neon4cast
+
