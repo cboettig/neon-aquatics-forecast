@@ -117,7 +117,7 @@ null_temperature <- past  |>
   forecast(h = "1 year")
 
 null_oxygen <- past  |>
-  model(null = TSLM(oxygen ~ )) |>
+  model(null = TSLM(oxygen ~ temperature)) |>
   forecast(h = "1 year")
 ```
 
