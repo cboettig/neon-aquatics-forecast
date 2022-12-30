@@ -3,5 +3,6 @@
 .RData
 .Ruserdata
 *.xml
-
 /.quarto/
+*.html
+*_files

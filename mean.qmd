@@ -107,3 +107,8 @@ neon4cast::forecast_output_validator(forecast_file)
 ```{r}
 submit(forecast_file)
 ```
+
+
+```{r}
+unlink(forecast_file)
+```
