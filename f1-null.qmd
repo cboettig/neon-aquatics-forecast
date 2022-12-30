@@ -1,5 +1,5 @@
 ---
-output: github_document
+title: "Mean Baselines"
 ---
 
 
@@ -22,8 +22,7 @@ library(fable)
 ```{r}
 ## uuid::UUIDgenerate()
 iteration_id <- uuid::UUIDgenerate()  #"c2cb06c2-4bf3-4aa0-9690-1fdd098a7ac5"
-
-forecast_date <- Sys.Date() - months(3)
+forecast_date <- Sys.Date() - days(35)
 
 ```
 
@@ -31,10 +30,8 @@ forecast_date <- Sys.Date() - months(3)
 
 ```{r}
 targets <-
-  "https://data.ecoforecast.org/neon4cast-targets/beetles/beetles-targets.csv.gz" %>% 
+  "https://data.ecoforecast.org/neon4cast-targets/aquatics/aquatics-targets.csv.gz" %>% 
   read_csv(show_col_types = FALSE) 
-
-#targets %>% duplicates(index = datetime, key  = c(variable,site_id))
 
 targets_ts <- targets %>% 
   as_tsibble(index = datetime, key = c(variable,site_id))
@@ -50,12 +47,12 @@ past <-  targets_ts %>% filter(datetime < forecast_date) |>
 
 ```{r}
 ## Compute a simple mean/sd model per site... obviously silly given huge seasonal aspect
-null_richness <- past  %>% 
-  model(null = MEAN(richness)) %>%
+null_temperature <- past  %>% 
+  model(null = MEAN(temperature)) %>%
   forecast(h = "1 year")
 
-null_abundance <- past  %>%
-  model(null = MEAN(abundance)) %>%
+null_oxygen <- past  %>%
+  model(null = MEAN(oxygen)) %>%
   forecast(h = "1 year")
 ```
 
@@ -66,12 +63,12 @@ null_abundance <- past  %>%
 ## Visualize the forecast
 
 ```{r}
-first4 <- unique(null_richness$site_id)[1:4]
+first4 <- unique(null_temperature$site_id)[1:4]
 
-null_richness %>% filter(site_id %in% first4)  %>% 
-  autoplot(past) + ggtitle("richness")
-null_abundance %>% filter(site_id %in% first4)  %>% 
-  autoplot(past) + ggtitle("abundance")
+null_temperature %>% filter(site_id %in% first4)  %>% 
+  autoplot(past) + ggtitle("temperature")
+null_oxygen %>% filter(site_id %in% first4)  %>% 
+  autoplot(past) + ggtitle("oxygen")
 ```
 
 ## EFI Formatting
@@ -81,26 +78,12 @@ To convey uncertainty, forecasts must be expressed either by giving mean and sta
 The helper function `efi_format()` handles this transformation.
 
 ```{r}
-## Combine richness and abundance forecasts
-forecast_raw <- bind_rows(efi_format(null_richness), 
-                            efi_format(null_abundance)) 
-```
-Dates must be expressed as the Monday of the week the sampling would be performed.  
-This way don't need to predict the precise day that the trap is collected, all traps
-collected in the same week will count as an observation made for that week.
 
-
-```{r}
-iso_week <- function(x){
-  monday <- gsub("\\d$", "1", ISOweek::date2ISOweek(x) )
-  ISOweek::ISOweek2date(monday)
-  }
+forecast <- bind_rows(efi_format(null_temperature), 
+                      efi_format(null_oxygen)) 
 ```
 
 
-```{r}
-forecast <- forecast_raw %>% mutate(datetime = iso_week(datetime) )
-```
 
 ```{r}
 scores <- neon4cast::score(forecast, targets)
@@ -113,7 +96,7 @@ scores |> filter(!is.na(observation))
 
 ```{r}
 forecast_file <- glue::glue("{theme}-{date}-{team}.csv.gz",
-                            theme = "beetles", 
+                            theme = "aquatics", 
                             date=forecast_date,
                             team = "cb_f1")
 write_csv(forecast, forecast_file)
