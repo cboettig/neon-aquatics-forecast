@@ -1,0 +1,143 @@
+---
+output: github_document
+---
+
+WORK IN PROGRESS
+
+```{r}
+knitr::opts_chunk$set(message=FALSE, eval=FALSE)
+```
+
+```{r setup}
+library(neonstore)
+library(tidyverse)
+library(tsibble)
+library(fable)
+library(neon4cast) # remotes::install_github("eco4cast/neon4cast", dep=TRUE)
+
+source("R/iso_week.R")
+team <- "cb_f4"
+
+```
+
+
+## Access Target Data
+
+```{r}
+targets <-
+  "https://data.ecoforecast.org/neon4cast-targets/beetles/beetles-targets.csv.gz" |> 
+  read_csv(show_col_types = FALSE) 
+
+#targets |> duplicates(index = datetime, key  = c(variable,site_id))
+
+targets_ts <- targets |> 
+  as_tsibble(index = datetime, key = c(variable,site_id))
+```
+
+
+```{r}
+forecast_date <- Sys.Date() - months(3)
+past <-  targets_ts |>
+  filter(datetime < forecast_date)  |>
+  pivot_wider(names_from="variable", values_from="observation")
+```
+
+
+## access precip and temp data
+
+Historical meterology goes into the "past" data.  Forecasted meterology is passed in as `new_data` to the `forecast` method.
+
+We can use actual NEON weather measurements or NOAA downscaled forecasts sources for historical, past observations.  Note that using NOAA's historical zero-horizon forecast instead of ground-truth measurements can actually be more accurate calibration if future `new_data` forecasts are also coming from NOAA predictions.  (Alternatively, we can merely use historical average seasonal measurements as our long-term 'forecast').
+
+
+```{r}
+
+sites <- unique(past$site_id)
+
+# peek at the distinct variable names
+#  noaa_stage3() |> distinct(variable) |> collect()
+# noaa_stage1()  |> distinct(variable) |> collect()
+
+# average over ensembles.  A little slow
+historical <- noaa_stage3() |> 
+  filter(site_id %in% sites,
+         variable %in% c("air_temperature", "precipitation_flux")) |>
+  mutate(date = lubridate::as_date(datetime)) |>
+  group_by(site_id, date, variable) |>
+  summarise(mean = mean(prediction),
+            min = min(prediction),
+            max = max(prediction)) |>
+  collect()
+
+tmp <- historical |> fitler(variable == "air_temperature") |> mutate(temp = prediction- 273)
+
+future <- noaa_stage1() |>
+  filter(site_id %in% sites,
+         variable %in% c("TMP", "PRECP")) |>
+  mutate(date = lubridate::as_date(datetime)) |>
+  group_by(site_id, date, variable) |>
+  summarise(mean = mean(prediction),
+            min = min(prediction),
+            max = max(prediction)) |>
+  collect()
+
+```
+
+
+
+```{r}
+```
+
+
+## Compute a forecast
+
+```{r}
+gap_filled <- tsibble::fill_gaps(past)
+arima_richness <- gap_filled  |> 
+  model(arima = TSLM(richness ~ precip + temp)) |>
+  forecast(h = "35 days") |>
+  efi_format()
+
+arima_abundance <- gap_filled  |>
+  model(arima = TSLM(precip + temp)) |>
+  forecast(h = "35 days") |>
+  efi_format()
+
+```
+
+## EFI Formatting
+
+```{r}
+## Combine richness and abundance forecasts. drop the 'model' column
+forecast <- bind_rows(arima_richness, arima_abundance)
+
+```
+Dates must be expressed as the Monday of the week the sampling would be performed.  
+This way don't need to predict the precise day that the trap is collected, all traps
+collected in the same week will count as an observation made for that week.
+
+
+```{r}
+forecast <- forecast |> mutate(datetime = iso_week(datetime) )
+```
+
+
+```{r}
+forecast_file <- glue::glue("{theme}-{date}-{team}.csv.gz",
+                            theme = "beetles", 
+                            date=forecast_date,
+                            team = team)
+write_csv(forecast, forecast_file)
+```
+
+
+```{r}
+neon4cast::forecast_output_validator(forecast_file)
+```
+
+
+
+```{r}
+submit(forecast_file)
+```
+
