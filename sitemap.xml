@@ -2,10 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://github.com/cboettig/neon-aquatics-forecast/weather.html</loc>
-    <lastmod>2022-12-31T04:43:29.067Z</lastmod>
+    <lastmod>2022-12-31T05:03:15.122Z</lastmod>
   </url>
   <url>
     <loc>https://github.com/cboettig/neon-aquatics-forecast/mean.html</loc>
-    <lastmod>2022-12-31T04:44:42.326Z</lastmod>
+    <lastmod>2022-12-31T05:04:15.513Z</lastmod>
+  </url>
+  <url>
+    <loc>https://github.com/cboettig/neon-aquatics-forecast/index.html</loc>
+    <lastmod>2022-12-31T05:04:15.817Z</lastmod>
   </url>
 </urlset>
