@@ -1,10 +1,14 @@
 ---
 title: "Mean Baselines"
+format: html
+df-print: paged 
 ---
 
 
-```{r}
-knitr::opts_chunk$set(message=FALSE)
+```{r include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE) # eval=FALSE to omit running
+score4cast::ignore_sigpipe()
+
 ```
 
 ```{r setup}
@@ -75,8 +79,11 @@ The helper function `efi_format()` handles this transformation.
 
 ```{r}
 
-forecast <- bind_rows(efi_format(null_temperature), 
-                      efi_format(null_oxygen)) 
+forecast <- 
+  bind_rows(efi_format(null_temperature), 
+            efi_format(null_oxygen)) |>
+  mutate(reference_datetime = forecast_date)
+  
 ```
 
 
@@ -84,7 +91,12 @@ forecast <- bind_rows(efi_format(null_temperature),
 ```{r}
 scores <- neon4cast::score(forecast, targets)
 
-scores |> filter(!is.na(observation))
+
+scores |> 
+  score4cast::include_horizon(allow_difftime = TRUE) |> 
+  group_by(variable) |>
+  summarise(crps = mean(crps, na.rm=TRUE), 
+            logs = mean(logs, na.rm=TRUE))
 ```
 
 

@@ -2,6 +2,11 @@
 title: "A weather-based forecast"
 ---
 
+```{r include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE) # eval=FALSE to omit running
+score4cast::ignore_sigpipe()
+
+```
 
 
 ```{r setup}
@@ -12,9 +17,6 @@ library(tsibble)
 library(lubridate)
 library(fable)
 library(glue)
-knitr::opts_chunk$set(message=FALSE) # eval=FALSE to omit running
-
-score4cast::ignore_sigpipe()
 ```
 
 
