@@ -218,6 +218,16 @@
       "Hash": "543776ae6848fde2f48ff3816d0628bc",
       "Requirements": []
     },
+    "biglm": {
+      "Package": "biglm",
+      "Version": "0.9-2.1",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "fb9718b294f541ed3adae42b8c830ae7",
+      "Requirements": [
+        "DBI"
+      ]
+    },
     "bit": {
       "Package": "bit",
       "Version": "4.0.5",
@@ -1196,6 +1206,16 @@
         "magrittr",
         "rlang",
         "vctrs"
+      ]
+    },
+    "rMR": {
+      "Package": "rMR",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "8c152566339fd5035115d8a41792bffb",
+      "Requirements": [
+        "biglm"
       ]
     },
     "rappdirs": {
