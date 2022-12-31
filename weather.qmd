@@ -12,7 +12,7 @@ library(tsibble)
 library(lubridate)
 library(fable)
 library(glue)
-knitr::opts_chunk$set(message=FALSE, eval=FALSE) # eval=FALSE to omit running
+knitr::opts_chunk$set(message=FALSE) # eval=FALSE to omit running
 ```
 
 
@@ -34,7 +34,8 @@ targets <-
   read_csv(show_col_types = FALSE) 
 
 targets_ts <- targets |> 
-  as_tsibble(index = datetime, key = c(variable,site_id))
+  pivot_wider(names_from="variable", values_from="observation") |>
+  as_tsibble(index = datetime, key = site_id)
 ```
 
 
@@ -44,11 +45,25 @@ In a production forecast, obviously this is just the current date and we use all
 data, but then we have to wait a few days before we have new observations to score.
 
 ```{r}
-past <-  targets_ts |> 
-  filter(datetime < forecast_date) |>
-  pivot_wider(names_from="variable", values_from="observation")
+past <-  
+  targets_ts |> 
+  filter(datetime < forecast_date)
 ```
 
+
+## Site data
+
+
+
+```{r}
+site_data <- 
+  glue("https://raw.githubusercontent.com/eco4cast/neon4cast-targets/",
+                            "main/NEON_Field_Site_Metadata_20220412.csv") |>
+  read_csv() |> 
+  filter(aquatics == 1) |>
+  select(site_id = field_site_id, elevation = field_mean_elevation_m)
+
+```
 
 
 ## Access weather data
@@ -59,110 +74,134 @@ Note that historical meteorology goes in the `past` data, while forecasted meteo
 We can use actual NEON weather measurements or NOAA downscaled forecasts sources for historical, past observations.  Note that using NOAA's historical zero-horizon forecast instead of ground-truth measurements can actually be more accurate calibration if future `new_data` forecasts are also coming from NOAA predictions.  (Alternatively, we can merely use historical average seasonal measurements as our long-term 'forecast').
 
 
+
+
+
 ```{r}
 sites <- unique(past$site_id)
 
-# peek at the distinct variable names
-#  noaa_stage3() |> distinct(variable) |> collect()
-# noaa_stage1()  |> distinct(variable) |> collect()
 
-# average over ensembles.  A little slow
-historical <- noaa_stage3() |> 
-  filter(site_id %in% sites,
-         variable %in% c("air_temperature", "precipitation_flux")) |>
+history <- 
+  noaa_stage3() |>
   mutate(date = lubridate::as_date(datetime)) |>
   group_by(site_id, date, variable) |>
-  summarise(mean = mean(prediction),
-            min = min(prediction),
-            max = max(prediction)) |>
-  collect()
-
-
-future <- noaa_stage1() |>
+  summarise(mean = mean(prediction, na.rm=TRUE),
+            .groups = "drop") |>
   filter(site_id %in% sites,
-         variable %in% c("TMP", "PRECP")) |>
-  mutate(date = lubridate::as_date(datetime)) |>
-  group_by(site_id, date, variable) |>
-  summarise(mean = mean(prediction),
-            min = min(prediction),
-            max = max(prediction)) |>
-  collect()
+         variable %in% c("air_temperature")) |>
+  collect() |>
+  pivot_wider(c(site_id, date), names_from="variable", values_from = "mean") |>
+  mutate(air_temperature = air_temperature -273) |>
+  rename(datetime = date)
+
+
 
 ```
 
+Join the historical NOAA record of air_temperature by site and datetime
+
+```{r}
+past2 <- left_join(past, as_tsibble(history, datetime, key=site_id) ) |> 
+  select(temperature, air_temperature, oxygen)  |> 
+  left_join(site_data)
+```
 
 
 ```{r}
-historical_w <- historical |>
-  pivot_wider(names_from="variable", values_from="prediction") |> 
-  mutate(air_temperature = air_temperature - 273)
-
-
-future_w <- future |> 
-   pivot_wider(names_from="variable", values_from="prediction") |>
-   rename(air_temperature = TMP,
-          precip = )
+future <- noaa_stage2() |> 
+  filter(reference_datetime == lubridate::as_datetime(forecast_date),
+         variable %in% c("air_temperature"),
+         site_id %in% sites) |>
+  mutate(date = lubridate::as_date(datetime)) |>
+  group_by(site_id, date, variable) |>
+  summarise(mean = mean(prediction, na.rm=TRUE),
+            .groups = "drop") |>
+  collect() |>
+  pivot_wider(c(site_id, date), 
+              names_from="variable", 
+              values_from = "mean") |>
+  mutate(air_temperature = air_temperature -273)  |>
+  rename(datetime = date)
 ```
-
-
-
-
-
 
 ## Compute a forecast
 
 ```{r}
-null_temperature <- past  |> 
-  model(null = TSLM(temperature ~ air_temperature)) |>
-  forecast(h = "1 year")
+new_data <- future |> as_tsibble(datetime, key=site_id) |> left_join(site_data)
+```
 
-null_oxygen <- past  |>
-  model(null = TSLM(oxygen ~ temperature)) |>
-  forecast(h = "1 year")
+```{r}
+fc_temperature <- 
+  past2  |> 
+  select(temperature, air_temperature) |>
+  drop_na() |> 
+  fill_gaps() |>
+  model(tslm = TSLM(temperature ~ air_temperature)) |>
+  forecast(new_data = new_data)
 ```
 
 
+We can use the mean forecast temperature to drive the oxygen forecast
 
+```{r}
+
+new_data2 <- left_join(new_data, fc_temperature) |> 
+  select(site_id, datetime, air_temperature, temperature = .mean)
+
+
+fc_oxygen <- past2  |> drop_na() |> fill_gaps() |>
+  model(tslm = TSLM(oxygen ~ temperature  ) ) |>
+  forecast(new_data = new_data2) |>
+  select(site_id, datetime, oxygen, .model, .mean)
+```
 
 ## Visualize the forecast
 
-```{r}
-first4 <- unique(null_temperature$site_id)[1:4]
 
-null_temperature |> filter(site_id %in% first4)  |> 
-  autoplot(past) + ggtitle("temperature")
-null_oxygen |> filter(site_id %in% first4)  |> 
-  autoplot(past) + ggtitle("oxygen")
+
+```{r}
+first4 <- unique(null_temperature$site_id)[1:6]
+cutoff <- forecast_date - months(3)
+historical <- targets_ts |> filter(datetime > cutoff)
+
+fc_temperature |> filter(site_id %in% first4)  |> 
+  autoplot(historical) + ggtitle("temperature")
+
+fc_oxygen |> filter(site_id %in% first4, datetime > cutoff)  |> 
+  autoplot(historical) + ggtitle("oxygen")
 ```
+
 
 ## EFI Formatting
 
-EFI requires a flat-file format for forecasts that avoids the use of complex list columns.  
-To convey uncertainty, forecasts must be expressed either by giving mean and standard deviation (for predictions that are normally distributed) or must express forecasts as an ensemble of replicate draws from forecast distribution.
-The helper function `efi_format()` handles this transformation.
-
-```{r}
-
-forecast <- bind_rows(efi_format(null_temperature), 
-                      efi_format(null_oxygen)) 
-```
+EFI requires a flat-file format for forecasts that avoids the use of complex list columns. To convey uncertainty, forecasts must be expressed either as a parametric distribution (e.g. for predictions that are normally distributed) or must express forecasts as an ensemble of replicate draws from forecast distribution. The helper function `efi_format()` handles this transformation.
 
 
 
 ```{r}
-scores <- neon4cast::score(forecast, targets)
 
-scores |> filter(!is.na(observation))
+fc_temperature <- fc_temperature |> select(-air_temperature, -elevation)
+
+forecast <- bind_rows(efi_format(fc_temperature), 
+                      efi_format(fc_oxygen)) 
 ```
 
 
+```{r}
+scores <- score(forecast, targets)
+fable_score <- scores |> 
+  score4cast::include_horizon(allow_difftime = TRUE) |> 
+  group_by(variable) |>
+  summarise(crps = mean(crps, na.rm=TRUE), 
+            logs = mean(logs, na.rm=TRUE))
+```
 
 
 ```{r}
 forecast_file <- glue::glue("{theme}-{date}-{team}.csv.gz",
                             theme = "aquatics", 
                             date=forecast_date,
-                            team = "cb_f1")
+                            team = "cb_weather")
 write_csv(forecast, forecast_file)
 ```
 
@@ -180,3 +219,65 @@ submit(forecast_file)
 ```{r}
 unlink(forecast_file)
 ```
+
+
+
+
+
+
+
+## Comparison: Dissolved oxygen inference
+
+Forecast uncertainty from ensemble distribution alone:
+
+```{r}
+future <- noaa_stage2() |> 
+  filter(reference_datetime == lubridate::as_datetime(forecast_date),
+         variable %in% c("air_temperature"),
+         site_id %in% sites) |>
+  mutate(date = lubridate::as_date(datetime)) |>
+  group_by(site_id, date, variable, parameter) |>
+  summarise(mean = mean(prediction, na.rm=TRUE),
+            .groups = "drop") |>
+  collect() |>
+  pivot_wider(c(site_id, date, parameter), 
+              names_from="variable", 
+              values_from = "mean") |>
+  mutate(air_temperature = air_temperature -273)  |>
+  rename(datetime = date)
+```
+
+
+
+```{r}
+fit <- lm(temperature ~ air_temperature, data = past2)
+
+ dissolved_oxygen <- function(temperature, elevation) { 
+    rMR::Eq.Ox.conc(temperature, 
+                    elevation.m = elevation,
+                    bar.press = NULL,
+                    bar.units = NULL,
+                    out.DO.meas = "mg/L",
+                    salinity = 0,
+                    salinity.units = "pp.thou")
+ }
+ 
+
+forecast <- 
+  left_join(future, site_data) |> 
+  mutate(temperature = predict(fit, tibble(air_temperature))) |>
+  rowwise() |>
+  mutate(temperature = max(temperature, 0),
+         oxygen = dissolved_oxygen(temperature, elevation)) |>
+  select(site_id, datetime, parameter, temperature, oxygen) |>
+  pivot_longer(c(temperature, oxygen),
+               names_to = "variable", 
+               values_to="prediction"
+               ) |>
+  mutate(family="sample")
+ 
+```
+
+
+
+
