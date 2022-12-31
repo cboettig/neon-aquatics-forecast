@@ -207,7 +207,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>null_temperature <span class="sc">|&gt;</span> <span class="fu">filter</span>(site_id <span class="sc">%in%</span> first4)  <span class="sc">|&gt;</span> </span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(past) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"temperature"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 385 rows containing missing values (`geom_line()`).</code></pre>
+<pre><code>Warning: Removed 386 rows containing missing values (`geom_line()`).</code></pre>
 </div>
 <div class="cell-output-display">
 <p><img src="mean_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
@@ -215,7 +215,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>null_oxygen <span class="sc">|&gt;</span> <span class="fu">filter</span>(site_id <span class="sc">%in%</span> first4)  <span class="sc">|&gt;</span> </span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>(past) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"oxygen"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 126 rows containing missing values (`geom_line()`).</code></pre>
+<pre><code>Warning: Removed 127 rows containing missing values (`geom_line()`).</code></pre>
 </div>
 <div class="cell-output-display">
 <p><img src="mean_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
@@ -238,20 +238,20 @@ To convey uncertainty, forecasts must be expressed either by giving mean and sta
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>scores <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(observation))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1,464 × 17
+<pre><code># A tibble: 1,419 × 17
    model_id site_id datetime   family variable  obser…¹  crps  logs  mean median
    &lt;chr&gt;    &lt;chr&gt;   &lt;date&gt;     &lt;chr&gt;  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
- 1 null     ARIK    2022-11-25 normal oxygen       6.67 0.669  1.88  7.39   7.39
- 2 null     ARIK    2022-11-25 normal temperat…    3.20 3.98   3.35  9.90   9.90
- 3 null     ARIK    2022-11-26 normal oxygen       6.40 0.739  1.92  7.39   7.39
- 4 null     ARIK    2022-11-26 normal temperat…    4.03 3.51   3.27  9.90   9.90
- 5 null     ARIK    2022-11-27 normal oxygen       5.80 0.974  2.04  7.39   7.39
- 6 null     ARIK    2022-11-27 normal temperat…    5.68 2.74   3.14  9.90   9.90
- 7 null     ARIK    2022-11-28 normal oxygen       6.04 0.869  1.98  7.39   7.39
- 8 null     ARIK    2022-11-28 normal temperat…    4.56 3.24   3.22  9.90   9.90
- 9 null     ARIK    2022-11-29 normal oxygen       6.06 0.863  1.98  7.39   7.39
-10 null     ARIK    2022-11-29 normal temperat…    4.19 3.43   3.25  9.90   9.90
-# … with 1,454 more rows, 7 more variables: sd &lt;dbl&gt;, quantile97.5 &lt;dbl&gt;,
+ 1 null     ARIK    2022-11-26 normal oxygen       6.40 0.739  1.92  7.39   7.39
+ 2 null     ARIK    2022-11-26 normal temperat…    4.03 3.51   3.27  9.89   9.89
+ 3 null     ARIK    2022-11-27 normal oxygen       5.80 0.974  2.04  7.39   7.39
+ 4 null     ARIK    2022-11-27 normal temperat…    5.68 2.74   3.14  9.89   9.89
+ 5 null     ARIK    2022-11-28 normal oxygen       6.04 0.869  1.98  7.39   7.39
+ 6 null     ARIK    2022-11-28 normal temperat…    4.56 3.24   3.22  9.89   9.89
+ 7 null     ARIK    2022-11-29 normal oxygen       6.06 0.862  1.98  7.39   7.39
+ 8 null     ARIK    2022-11-29 normal temperat…    4.19 3.43   3.25  9.89   9.89
+ 9 null     ARIK    2022-11-30 normal oxygen       6.67 0.668  1.88  7.39   7.39
+10 null     ARIK    2022-11-30 normal temperat…    1.21 5.30   3.59  9.89   9.89
+# … with 1,409 more rows, 7 more variables: sd &lt;dbl&gt;, quantile97.5 &lt;dbl&gt;,
 #   quantile02.5 &lt;dbl&gt;, quantile90 &lt;dbl&gt;, quantile10 &lt;dbl&gt;,
 #   reference_datetime &lt;date&gt;, horizon &lt;dbl&gt;, and abbreviated variable name
 #   ¹​observation</code></pre>
