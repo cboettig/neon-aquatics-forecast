@@ -160,7 +160,7 @@ fc_oxygen <- past2  |> drop_na() |> fill_gaps() |>
 
 
 ```{r}
-first4 <- unique(null_temperature$site_id)[1:6]
+first4 <- unique(fc_temperature$site_id)[1:6]
 cutoff <- forecast_date - months(3)
 historical <- targets_ts |> filter(datetime > cutoff)
 
@@ -226,57 +226,6 @@ unlink(forecast_file)
 
 
 
-## Comparison: Dissolved oxygen inference
-
-Forecast uncertainty from ensemble distribution alone:
-
-```{r}
-future <- noaa_stage2() |> 
-  filter(reference_datetime == lubridate::as_datetime(forecast_date),
-         variable %in% c("air_temperature"),
-         site_id %in% sites) |>
-  mutate(date = lubridate::as_date(datetime)) |>
-  group_by(site_id, date, variable, parameter) |>
-  summarise(mean = mean(prediction, na.rm=TRUE),
-            .groups = "drop") |>
-  collect() |>
-  pivot_wider(c(site_id, date, parameter), 
-              names_from="variable", 
-              values_from = "mean") |>
-  mutate(air_temperature = air_temperature -273)  |>
-  rename(datetime = date)
-```
-
-
-
-```{r}
-fit <- lm(temperature ~ air_temperature, data = past2)
-
- dissolved_oxygen <- function(temperature, elevation) { 
-    rMR::Eq.Ox.conc(temperature, 
-                    elevation.m = elevation,
-                    bar.press = NULL,
-                    bar.units = NULL,
-                    out.DO.meas = "mg/L",
-                    salinity = 0,
-                    salinity.units = "pp.thou")
- }
- 
-
-forecast <- 
-  left_join(future, site_data) |> 
-  mutate(temperature = predict(fit, tibble(air_temperature))) |>
-  rowwise() |>
-  mutate(temperature = max(temperature, 0),
-         oxygen = dissolved_oxygen(temperature, elevation)) |>
-  select(site_id, datetime, parameter, temperature, oxygen) |>
-  pivot_longer(c(temperature, oxygen),
-               names_to = "variable", 
-               values_to="prediction"
-               ) |>
-  mutate(family="sample")
- 
-```
 
 
 
