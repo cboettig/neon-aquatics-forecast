@@ -12,12 +12,13 @@ website:
     background: primary
     search: true
     left:
+      - href: index.qmd
+        icon: house
       - href: mean.qmd
         icon: tree-fill
       - href: weather.qmd
         icon: thermometer-half
-      - href: README.qmd
-        icon: home
+
 
   page-footer:
     left: "CC-BY"
@@ -28,7 +29,6 @@ website:
 format:
   html:
     theme: yeti
-    css: styles.css
     title-block-style: default
     title-block-banner: "img/took.jpg"
     page-layout: full

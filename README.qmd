@@ -1,14 +1,8 @@
 ---
-output: github_document
+title: "Overview"
+format: html
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-
-# neon-beetles-forecasts
-
-<!-- badges: start -->
-<!-- badges: end -->
 
 This repository hosts the code for some submissions to the [EFI NEON Forecasting Challenge](https://projects.ecoforecast.org/neon4cast-docs/).
 
