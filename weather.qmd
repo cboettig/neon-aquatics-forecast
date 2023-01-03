@@ -18,7 +18,7 @@ knitr::opts_chunk$set(message=FALSE) # eval=FALSE to omit running
 
 
 ```{r}
-forecast_date <- Sys.Date() - days(35)
+forecast_date <-  Sys.Date() - days(35)
 ```
 
 ## Access Target Data
@@ -183,7 +183,8 @@ EFI requires a flat-file format for forecasts that avoids the use of complex lis
 fc_temperature <- fc_temperature |> select(-air_temperature, -elevation)
 
 forecast <- bind_rows(efi_format(fc_temperature), 
-                      efi_format(fc_oxygen)) 
+                      efi_format(fc_oxygen))  |>
+            mutate(reference_datetime = forecast_date)
 ```
 
 
@@ -194,6 +195,7 @@ fable_score <- scores |>
   group_by(variable) |>
   summarise(crps = mean(crps, na.rm=TRUE), 
             logs = mean(logs, na.rm=TRUE))
+fable_score
 ```
 
 
