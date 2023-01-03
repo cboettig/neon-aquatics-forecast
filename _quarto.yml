@@ -2,5 +2,36 @@ project:
   title: "neon-aquatics-forecast"
   type: "website"
 
+website:
+  title: "Aquatics Forecasts"
+  page-navigation: true
+  repo-url: https://github.com/cboettig/neon-aquatics-forecast
+  repo-actions: [edit, issue]
+
+  navbar:
+    background: primary
+    search: true
+    left:
+      - href: index.qmd
+        icon: house
+      - href: mean.qmd
+        icon: tree-fill
+      - href: weather.qmd
+        icon: thermometer-half
 
 
+  page-footer:
+    left: "CC-BY"
+    right:
+      - icon: github
+        href: https://github.com/cboettig/neon-aquatics-forecast
+
+format:
+  html:
+    theme: yeti
+    title-block-style: default
+    title-block-banner: "img/took.jpg"
+    page-layout: full
+    toc: true
+
+editor: visual

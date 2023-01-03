@@ -1,5 +1,5 @@
 Package: compendium
 Version: 0.1.0
-Depends: tidyverse, fable, neonstore, neon4cast, feasts, urca, tsibble
+Depends: tidyverse, fable, neonstore, neon4cast, feasts, urca, tsibble, brio
 Remotes: github::eco4cast/neon4cast
 
