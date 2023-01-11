@@ -83,7 +83,7 @@ forecast <-
                names_to = "variable",
                values_to="prediction"
   ) |>
-  mutate(family="sample")
+  mutate(family="ensemble")
 
 
 scores <- score(forecast,targets)

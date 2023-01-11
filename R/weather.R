@@ -132,6 +132,6 @@ scores |>
             logs = mean(logs, na.rm=TRUE)) |>
   pivot_longer(c(crps, logs), names_to="metric", values_to="score") |>
   ggplot(aes(reference_datetime, score, col=variable)) +
-  geom_line() + facet_wrap(~metric)
+  geom_line() + facet_wrap(~metric, scales = "free_y", ncol=1)
 
 
