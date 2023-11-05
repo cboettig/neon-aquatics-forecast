@@ -3,7 +3,7 @@ title: "A weather-based forecast"
 ---
 
 ```{r include=FALSE}
-knitr::opts_chunk$set(message=FALSE, warning=FALSE) # eval=FALSE to omit running
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, eval=FALSE) # eval=FALSE to omit running
 score4cast::ignore_sigpipe()
 
 ```
