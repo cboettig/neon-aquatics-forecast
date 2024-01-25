@@ -1,1 +1,1 @@
-Sitemap: https://github.com/cboettig/neon-aquatics-forecast/sitemap.xml
+Sitemap: https://cboettig.github.io/neon-aquatics-forecast/sitemap.xml

@@ -25,14 +25,14 @@
     "href": "mean.html#visualize-the-forecast",
     "title": "Mean Baselines",
     "section": "Visualize the forecast",
-    "text": "Visualize the forecast\n\nfirst4 &lt;- unique(null_temperature$site_id)[1:4]\n\nnull_temperature |&gt; filter(site_id %in% first4)  |&gt; \n  autoplot(past) + ggtitle(\"temperature\")\n\n\n\nnull_oxygen |&gt; filter(site_id %in% first4)  |&gt; \n  autoplot(past) + ggtitle(\"oxygen\")"
+    "text": "Visualize the forecast\n\nfirst4 &lt;- unique(null_temperature$site_id)[1:4]\n\nnull_temperature |&gt; filter(site_id %in% first4)  |&gt; \n  autoplot(past) + ggtitle(\"temperature\")\n\n\n\n\n\n\n\nnull_oxygen |&gt; filter(site_id %in% first4)  |&gt; \n  autoplot(past) + ggtitle(\"oxygen\")"
   },
   {
     "objectID": "mean.html#efi-formatting",
     "href": "mean.html#efi-formatting",
     "title": "Mean Baselines",
     "section": "EFI Formatting",
-    "text": "EFI Formatting\nEFI requires a flat-file format for forecasts that avoids the use of complex list columns.\nTo convey uncertainty, forecasts must be expressed either by giving mean and standard deviation (for predictions that are normally distributed) or must express forecasts as an ensemble of replicate draws from forecast distribution. The helper function efi_format() handles this transformation.\n\nforecast &lt;- \n  bind_rows(efi_format(null_temperature), \n            efi_format(null_oxygen)) |&gt;\n  mutate(reference_datetime = forecast_date)\n\n\nscores &lt;- neon4cast::score(forecast, targets)\n\n\nscores |&gt; \n  score4cast::include_horizon(allow_difftime = TRUE) |&gt; \n  group_by(variable) |&gt;\n  summarise(crps = mean(crps, na.rm=TRUE), \n            logs = mean(logs, na.rm=TRUE))\n\n\n\n  \n\n\n\n\nforecast_file &lt;- glue::glue(\"{theme}-{date}-{team}.csv.gz\",\n                            theme = \"aquatics\", \n                            date=forecast_date,\n                            team = \"cb_f1\")\nwrite_csv(forecast, forecast_file)\n\n\nneon4cast::forecast_output_validator(forecast_file)\n\n[1] TRUE\n\n\n\nsubmit(forecast_file)\n\n\nunlink(forecast_file)"
+    "text": "EFI Formatting\nEFI requires a flat-file format for forecasts that avoids the use of complex list columns.\nTo convey uncertainty, forecasts must be expressed either by giving mean and standard deviation (for predictions that are normally distributed) or must express forecasts as an ensemble of replicate draws from forecast distribution. The helper function efi_format() handles this transformation.\n\nforecast &lt;- \n  bind_rows(efi_format(null_temperature), \n            efi_format(null_oxygen)) |&gt;\n  mutate(reference_datetime = forecast_date)\n\n\nscores &lt;- neon4cast::score(forecast, targets)\n\n\nscores |&gt; \n  score4cast::include_horizon(allow_difftime = TRUE) |&gt; \n  group_by(variable) |&gt;\n  summarise(crps = mean(crps, na.rm=TRUE), \n            logs = mean(logs, na.rm=TRUE))\n\n\n  \n\n\n\n\nforecast_file &lt;- glue::glue(\"{theme}-{date}-{team}.csv.gz\",\n                            theme = \"aquatics\", \n                            date=forecast_date,\n                            team = \"cb_f1\")\nwrite_csv(forecast, forecast_file)\n\n\nneon4cast::forecast_output_validator(forecast_file)\n\n[1] TRUE\n\n\n\nsubmit(forecast_file)\n\n\nunlink(forecast_file)"
   },
   {
     "objectID": "index.html",
